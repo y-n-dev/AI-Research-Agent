@@ -1,0 +1,1094 @@
+{
+  "name": "leaning_workflow_en",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -40,
+        -40
+      ],
+      "id": "8209d4cb-2f70-4e96-82d3-1e35b083076e",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-20250514",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        860,
+        460
+      ],
+      "id": "0a455837-adfe-4851-a09f-f866ce29068c",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "ThLg5qkcjtu1d3nA",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 234951073,
+          "mode": "list",
+          "cachedResultName": "research_history",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=234951073"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -20,
+        240
+      ],
+      "id": "064fc2cc-c4df-4000-8706-0003644a64ef",
+      "name": "Research History Reading",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $json.settings.discord_chat_channel_id }}",
+          "mode": "id"
+        },
+        "content": "🌱 Weekly learning time! ✨\n\nReflecting on this week's research to grow! \n Please wait a moment 🤖💭",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        500,
+        -40
+      ],
+      "id": "aa9395ae-b472-4af3-8715-0baf842a2e11",
+      "name": "Learning Start Notification",
+      "webhookId": "ab672458-ce0b-46b0-85c7-aa9601b5bbd5",
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "config",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        120,
+        -40
+      ],
+      "id": "23c22be8-16a0-4c7d-9bb1-a519b335280e",
+      "name": "Config Reading",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 10個の設定項目を1つのオブジェクトにまとめる\nconst settings = {};\nfor (const item of $input.all()) {\n  settings[item.json.key] = item.json.value;\n}\n\nreturn [{ settings }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        -40
+      ],
+      "id": "911cfc4e-903b-46c5-9b43-a328d3d805e5",
+      "name": "Config Object Creation"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 全ての調査履歴を1つのオブジェクトにまとめる\nconst allData = $input.all();\nreturn [{ \n  totalCount: allData.length,\n  allRecords: allData,\n  summary: `調査履歴${allData.length}件をまとめました`\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        240
+      ],
+      "id": "f2180ba0-25f9-4e2f-844c-89095568d8d5",
+      "name": "Research History Object Creation"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 911248991,
+          "mode": "list",
+          "cachedResultName": "prompt_management",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=911248991"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "is_active",
+              "lookupValue": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        460,
+        240
+      ],
+      "id": "82b73b2c-362c-4d91-b3fa-7dfa39ae154a",
+      "name": "Current Prompt Reading",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=あなたはAI調査エージェントの学習分析担当です。\n\n以下は調査履歴データです：\n{{ JSON.stringify($('Research History Object Creation').item.json.allRecords, null, 2) }}\n\n総件数: {{ $('Research History Object Creation').item.json.totalCount }}件\n\n**※重要: 直近7日間（{{ $now.minus({days: 7}).toFormat('yyyy/M/d') }}以降）のデータのみを分析してください**\n**※それより古いデータは無視してください**\n\n上記のデータを分析して、今週の学習レポートを作成してください：\n\n🌱 **今週の学習レポート**\n\n📊 **調査実績**\n- 総調査件数: {{ $('Research History Object Creation').item.json.totalCount }}件\n- カテゴリ別集計\n\n💭 **今週覚えたこと**\n- 全調査を通して学んだこと\n- 調査パターンの傾向\n- 成長ポイント\n\n✨ **ひとこと**\n- AIちゃんらしい可愛いコメント\n\n※学習レポートのみを出力してください。",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        640,
+        240
+      ],
+      "id": "3ec0c5cb-e6fe-4172-9de3-840a0c1af51a",
+      "name": "Learning Analysis"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 705924613,
+          "mode": "list",
+          "cachedResultName": "learning_data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=705924613"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "learning_date": "={{ new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) }}",
+            "learning_content": "={{ $('Learning Analysis').item.json.text }}",
+            "prompt_version": "={{ $('Current Prompt Reading').item.json[\"version\"] }}"
+          },
+          "matchingColumns": [
+            "learning_date"
+          ],
+          "schema": [
+            {
+              "id": "learning_date",
+              "displayName": "learning_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "learning_content",
+              "displayName": "learning_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "improvement_judgment",
+              "displayName": "improvement_judgment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "prompt_version",
+              "displayName": "prompt_version",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        920,
+        120
+      ],
+      "id": "bd4eeaeb-c17f-4a18-963d-90c0f1e0aaca",
+      "name": "Learning Result Save",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=あなたはAI調査エージェントの改良判定専門家です。\n\n## 今週の学習分析結果\n{{ $('Learning Analysis').item.json.text }}\n\n## 現在使用中のプロンプト\n{{ $('Current Prompt Reading').item.json['現在のプロンプト文'] }}\n\n上記の学習結果と現在のプロンプトを比較分析し、プロンプトの改良が必要かどうか判定してください。\n\n回答は以下のいずれかのみで出力してください：\n- 改良必要\n- 改良不要",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1020,
+        240
+      ],
+      "id": "18001963-3176-4f51-881d-ad1e8b990e0e",
+      "name": "Improvement Necessity Assessment"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "改良必要",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "0893c439-29a7-475a-8c61-2e07ff608fd3"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "60ffa663-305f-4c6e-90c1-edfda9aea25a",
+                    "leftValue": "={{ $json.text }} contains 改良不要",
+                    "rightValue": "改良不要",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "58574a74-7d92-4f33-9638-211fcd5f3aa6",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1380,
+        240
+      ],
+      "id": "c29b31e4-8a9f-41eb-9bf9-c5cb056ef6f7",
+      "name": "Improvement Decision Switch"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=あなたはAI調査エージェントのプロンプト改良専門家です。\n\n## 現在使用中のプロンプト\n{{ JSON.stringify($('Current Prompt Reading').item.json, null, 2) }}\n\n## 過去の調査履歴\n{{ JSON.stringify($('Research History Object Creation').item.json.allRecords, null, 2) }}\n\n## 学習分析結果\n{{ $('Learning Analysis').item.json.text }}\n\n上記のデータを分析して、現在のプロンプトの改良版を提案してください。\n\n🔧 プロンプト改良分析\n- 現在のプロンプトの強み\n- 調査結果から見つけた改良点\n- 具体的な改良提案\n\n💡 改良版プロンプト\n現在のプロンプトを改良した新バージョンを以下の形式で出力してください：\n\n※改良版プロンプトの内容のみを出力し、分析結果は含めないでください。\n\n改良版プロンプト：",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1600,
+        260
+      ],
+      "id": "d4413916-340c-4a9f-ab44-7a613b9c5cd6",
+      "name": "Prompt Improvement"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $node['Config Object Creation'].json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $node['Config Object Creation'].json.settings.discord_chat_channel_id }}",
+          "mode": "id"
+        },
+        "content": "=📋 This week's learning summary ✨\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n{{ $('Learning Analysis').item.json.text }}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\nLooking forward to next week! 🤖💭",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        260
+      ],
+      "id": "7dfe0add-43af-4da4-8d3f-540a07976df2",
+      "name": "Learning Content Notification",
+      "webhookId": "c6b60df9-f871-403d-a744-7735f976c476",
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 911248991,
+          "mode": "list",
+          "cachedResultName": "prompt_management",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=911248991"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "version": "={{ $('Current Prompt Reading').item.json['version'] }}",
+            "current_prompt_text": "=$('Prompt Improvement').item.json.text",
+            "is_active": "FALSE"
+          },
+          "matchingColumns": [
+            "version"
+          ],
+          "schema": [
+            {
+              "id": "prompt_name",
+              "displayName": "prompt_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "current_prompt_text",
+              "displayName": "current_prompt_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "version",
+              "displayName": "version",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "update_date",
+              "displayName": "update_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "improvement_reason",
+              "displayName": "improvement_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "is_active",
+              "displayName": "is_active",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "character_limit",
+              "displayName": "character_limit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2080,
+        260
+      ],
+      "id": "32d9bc85-edd2-46d6-bf5b-03bdc3c56540",
+      "name": "Version Update Process",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 911248991,
+          "mode": "list",
+          "cachedResultName": "prompt_management",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=911248991"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "prompt_name": "='research_main_v' + (parseFloat($('Current Prompt Reading').item.json['version'].replace('v', '')) + 0.1).toFixed(1)",
+            "current_prompt_text": "=$('Prompt Improvement').item.json.text",
+            "version": "='v' + (parseFloat($('Current Prompt Reading').item.json['version'].replace('v', '')) + 0.1).toFixed(1)",
+            "update_date": "=new Date().toLocaleString('en-US', { timeZone: 'America/New_York' })",
+            "improvement_reason": "Automatic improvement by AI self-learning",
+            "is_active": "TRUE",
+            "character_limit": "1800"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "prompt_name",
+              "displayName": "prompt_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "current_prompt_text",
+              "displayName": "current_prompt_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "version",
+              "displayName": "version",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "update_date",
+              "displayName": "update_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "improvement_reason",
+              "displayName": "improvement_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "is_active",
+              "displayName": "is_active",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "character_limit",
+              "displayName": "character_limit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2240,
+        260
+      ],
+      "id": "7981f658-463a-4374-9773-76ca7a7f94ea",
+      "name": "Improved Prompt Save",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $node['Config Object Creation'].json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $node['Config Object Creation'].json.settings.discord_chat_channel_id }}",
+          "mode": "id"
+        },
+        "content": "=📋 This week's prompt evaluation: Current version is sufficient ✨\n\nCurrent prompts are working well for research, so no improvements needed this week! 🤖💕",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        440
+      ],
+      "id": "03cbfab1-55cb-4b28-8d4b-baaf07d74eba",
+      "name": "Status Maintenance Message",
+      "webhookId": "c6b60df9-f871-403d-a744-7735f976c476",
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $node['Config Object Creation'].json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $node['Config Object Creation'].json.settings.discord_chat_channel_id }}",
+          "mode": "id"
+        },
+        "content": "=⚠️ Error occurred in this week's evaluation\n\nResults were unclear, so maintaining current version for safety! Will try again next week 🤖💭",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        620
+      ],
+      "id": "108e5477-6ad0-4a21-b232-4ce17b05e6b2",
+      "name": "Assessment Error Message",
+      "webhookId": "c6b60df9-f871-403d-a744-7735f976c476",
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 705924613,
+          "mode": "list",
+          "cachedResultName": "learning_data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=705924613"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "learning_date": "={{ $('Learning Result Save').item.json.learning_date }}",
+            "improvement_judgment": "= {{ $('Improvement Necessity Assessment').item.json.text }}"
+          },
+          "matchingColumns": [
+            "learning_date"
+          ],
+          "schema": [
+            {
+              "id": "learning_date",
+              "displayName": "learning_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "learning_content",
+              "displayName": "learning_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "improvement_judgment",
+              "displayName": "improvement_judgment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "prompt_version",
+              "displayName": "prompt_version",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1280,
+        100
+      ],
+      "id": "5f9c3c2a-3b58-46a8-b4ff-532ec031ed7e",
+      "name": "Assessment Result Recording",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config Reading",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Learning Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Prompt Improvement",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Improvement Necessity Assessment",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research History Reading": {
+      "main": [
+        [
+          {
+            "node": "Research History Object Creation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Learning Start Notification": {
+      "main": [
+        [
+          {
+            "node": "Research History Reading",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Reading": {
+      "main": [
+        [
+          {
+            "node": "Config Object Creation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Object Creation": {
+      "main": [
+        [
+          {
+            "node": "Learning Start Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research History Object Creation": {
+      "main": [
+        [
+          {
+            "node": "Current Prompt Reading",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Current Prompt Reading": {
+      "main": [
+        [
+          {
+            "node": "Learning Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Learning Analysis": {
+      "main": [
+        [
+          {
+            "node": "Learning Result Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Learning Result Save": {
+      "main": [
+        [
+          {
+            "node": "Improvement Necessity Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Improvement Necessity Assessment": {
+      "main": [
+        [
+          {
+            "node": "Assessment Result Recording",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Improvement Decision Switch": {
+      "main": [
+        [
+          {
+            "node": "Prompt Improvement",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Status Maintenance Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Assessment Error Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompt Improvement": {
+      "main": [
+        [
+          {
+            "node": "Learning Content Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Learning Content Notification": {
+      "main": [
+        [
+          {
+            "node": "Version Update Process",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Version Update Process": {
+      "main": [
+        [
+          {
+            "node": "Improved Prompt Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assessment Result Recording": {
+      "main": [
+        [
+          {
+            "node": "Improvement Decision Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "e2d53214-da8b-464f-9eed-2bec3cf00fac",
+  "meta": {
+    "instanceId": "66a6ede234f1f050a2478dff25d508f032dcf1098c62d8ee0c4a03453d1946cc"
+  },
+  "id": "Dtv6119HvkFKuq9L",
+  "tags": []
+}

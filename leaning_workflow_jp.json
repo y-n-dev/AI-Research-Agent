@@ -1,0 +1,1096 @@
+{
+  "name": "leaning_workflow_jp",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "309fece4-711e-43fa-a2b1-429c860897b5",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-4-20250514",
+          "mode": "list",
+          "cachedResultName": "Claude Sonnet 4"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        860,
+        460
+      ],
+      "id": "87ce5774-cce3-4473-81cb-8d6c25a5d08e",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "ThLg5qkcjtu1d3nA",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=あなたはAI調査エージェントの厳格な改良分析担当です。\n\n以下は調査履歴データです：\n{{ JSON.stringify($('調査履歴のオブジェクト化').item.json.allRecords, null, 2) }}\n\n**※重要: 直近7日間（{{ $now.minus({days: 7}).toFormat('yyyy/M/d') }}以降）のデータのみを分析してください**\n\n## 🔍 厳格な分析視点\n以下の観点で必ず問題点・改良点を見つけて分析してください：\n\n1. **情報の網羅性**: 重要な情報が抜けていないか？\n2. **調査の深さ**: 表面的すぎないか？より深い分析ができないか？\n3. **実用性**: ユーザーが実際に行動を起こせる情報になっているか？\n4. **差別化**: 他の情報源と差別化できているか？\n5. **構造化**: 情報が整理されて読みやすいか？\n\n## 📋 必須出力項目\n🌱 **今週の学習レポート**\n📊 **調査実績** - 件数、カテゴリ分析\n💡 **発見した問題点** - 現在の調査の具体的な不足点\n🔧 **改良が必要な理由** - なぜ現状では不十分なのか\n✨ **ひとこと** - AIちゃんらしい向上心あふれるコメント\n\n**重要: 問題点が見つからない場合でも、必ず改良の可能性を探してください。**",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        640,
+        240
+      ],
+      "id": "84651dd8-0652-4b11-a518-3e2e0c580bc4",
+      "name": "学習分析"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 234951073,
+          "mode": "list",
+          "cachedResultName": "research_history",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=234951073"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        20,
+        240
+      ],
+      "id": "4bebc15c-20de-4626-947a-85ef2631c781",
+      "name": "調査履歴読み取り",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $node['設定オブジェクト化'].json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $node['設定オブジェクト化'].json.settings.discord_chat_channel_id }}",
+          "mode": "id"
+        },
+        "content": "=📋 今週の学習まとめ〜✨\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n{{ $('学習分析').item.json.text }}\n\n━━━━━━━━━━━━━━━━━━━━━━\n\n今週もよろしくお願いします〜🤖💭",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        260
+      ],
+      "id": "870f8a6c-f536-460c-9830-4b55594f0bbc",
+      "name": "学習内容送信",
+      "webhookId": "c6b60df9-f871-403d-a744-7735f976c476",
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 911248991,
+          "mode": "list",
+          "cachedResultName": "prompt_management",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=911248991"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "is_active",
+              "lookupValue": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        460,
+        240
+      ],
+      "id": "04b0472d-558f-4d47-9c14-eb4b1209b6a1",
+      "name": "現在プロンプト読み取り",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 全ての調査履歴を1つのオブジェクトにまとめる\nconst allData = $input.all();\nreturn [{ \n  totalCount: allData.length,\n  allRecords: allData,\n  summary: `調査履歴${allData.length}件をまとめました`\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        240
+      ],
+      "id": "e1bae7b2-592b-4be5-a5ab-8909ae115efd",
+      "name": "調査履歴のオブジェクト化"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=あなたはAI調査エージェントの厳格なプロンプト改良専門家です。\n\n## 現在使用中のプロンプト\n{{ JSON.stringify($('現在プロンプト読み取り').item.json, null, 2) }}\n\n## 過去の調査履歴\n{{ JSON.stringify($('調査履歴のオブジェクト化').item.json.allRecords, null, 2) }}\n\n## 学習分析結果\n{{ $('学習分析').item.json.text }}\n\n## 🎯 改良の強制指針\n以下の観点で**必ず**現在のプロンプトに改良を加えてください：\n\n### 必須改良観点\n1. **情報の網羅性向上**: より多角的な調査観点を追加\n2. **構造化強化**: 情報整理・分類方法の改善\n3. **実用性向上**: ユーザーの意思決定に直結する情報の充実\n4. **差別化**: 他の情報源にはない独自の価値追加\n5. **読みやすさ**: レポート構成・表現方法の改善\n\n### 具体的改良例\n- カテゴリ分類の導入・詳細化\n- 価格分析・コスパ評価の追加\n- ユーザー評価・口コミ分析の強化\n- 競合比較・選択指針の明確化\n- 最新トレンド・市況分析の追加\n- 購入タイミング・推奨の具体化\n\n## 🔧 出力要件\n\n### 改良版プロンプトの条件\n- **必ず現在版より詳細・具体的にする**\n- **新しい調査観点を最低2つ以上追加**\n- **情報の構造化指示を強化**\n- **実用性を高める指示を追加**\n\n## 💡 改良版プロンプト\n現在のプロンプトを上記観点で必ず改良した新バージョンを出力してください。\n\n**重要**: \n- 改良版プロンプトの内容のみを出力してください\n- 分析結果や説明は一切含めないでください\n- 現在版と同程度の内容は改良不足です\n- 必ず具体的な改善を含めてください\n\n改良版プロンプト：",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1600,
+        260
+      ],
+      "id": "65dfdb62-7ed7-42e2-bd86-07ad54c455c2",
+      "name": "プロンプト改良"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 911248991,
+          "mode": "list",
+          "cachedResultName": "prompt_management",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=911248991"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "prompt_name": "={{ '調査用メイン_v' + (parseFloat($('現在プロンプト読み取り').item.json['version'].replace('v', '')) + 0.1).toFixed(1) }}",
+            "current_prompt_text": "={{ $('プロンプト改良').item.json.text }}",
+            "version": "={{ 'v' + (parseFloat($('現在プロンプト読み取り').item.json['version'].replace('v', '')) + 0.1).toFixed(1) }}",
+            "update_date": "={{ new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) }}",
+            "improvement_reason": "AI自己学習による自動改良",
+            "is_active": "TRUE",
+            "character_limit": "3000"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "prompt_name",
+              "displayName": "prompt_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "current_prompt_text",
+              "displayName": "current_prompt_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "version",
+              "displayName": "version",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "update_date",
+              "displayName": "update_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "improvement_reason",
+              "displayName": "improvement_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "is_active",
+              "displayName": "is_active",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "character_limit",
+              "displayName": "character_limit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2240,
+        260
+      ],
+      "id": "eab50a34-78e0-4207-9b01-512151dd000b",
+      "name": "改良プロンプト保存",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $json.settings.discord_chat_channel_id }}",
+          "mode": "id"
+        },
+        "content": "🌱 週次学習タイムです〜✨\n\n今週の調査を振り返って成長します！\nしばらくお待ちください〜🤖💭",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ],
+      "id": "4ae4684d-21e8-46d6-92e7-7f56f04a1b19",
+      "name": "学習開始通知",
+      "webhookId": "ab672458-ce0b-46b0-85c7-aa9601b5bbd5",
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 911248991,
+          "mode": "list",
+          "cachedResultName": "prompt_management",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=911248991"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "version": "={{ $('現在プロンプト読み取り').item.json.version }}",
+            "is_active": "FALSE"
+          },
+          "matchingColumns": [
+            "version"
+          ],
+          "schema": [
+            {
+              "id": "prompt_name",
+              "displayName": "prompt_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "current_prompt_text",
+              "displayName": "current_prompt_text",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "version",
+              "displayName": "version",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "update_date",
+              "displayName": "update_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "improvement_reason",
+              "displayName": "improvement_reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "is_active",
+              "displayName": "is_active",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "character_limit",
+              "displayName": "character_limit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        2080,
+        260
+      ],
+      "id": "c47c5626-dca9-4bd5-b2a7-02f3d0b54d48",
+      "name": "バージョン更新処理",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.improvement_judgmen }}",
+                    "rightValue": "改良必要",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "0893c439-29a7-475a-8c61-2e07ff608fd3"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "60ffa663-305f-4c6e-90c1-edfda9aea25a",
+                    "leftValue": "={{ $json.improvement_judgmen }} contains 改良不要",
+                    "rightValue": "改良不要",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "58574a74-7d92-4f33-9638-211fcd5f3aa6",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1380,
+        240
+      ],
+      "id": "ecae0b38-7c4b-4795-a354-c305b51bfcb5",
+      "name": "改良判定分岐"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=あなたはAI調査エージェントの厳格な改良判定専門家です。\n\n## 今週の学習分析結果\n{{ $('学習分析').item.json.text }}\n\n## 現在使用中のプロンプト\n{{ $('現在プロンプト読み取り').item.json.current_prompt_text }}\n\n## 判定基準（厳格モード）\n以下の基準で判定してください：\n\n### 改良必要と判定する条件（いずれか1つでも該当すれば改良必要）\n- 学習分析で具体的な問題点・改良点が指摘されている\n- 調査結果に情報の抜け・浅さが見られる\n- ユーザーの行動に繋がる情報が不足している\n- 他の情報源との差別化ができていない\n- 情報の構造化・読みやすさに改善余地がある\n- 前回改良から2週間以上経過している\n\n### 改良不要と判定する条件（全て満たす場合のみ）\n- 学習分析で明確に「問題なし」と評価されている\n- 調査品質が明らかに高く、改良余地が見当たらない\n- 前回改良から1週間以内で、明確な品質向上が確認されている\n\n## 出力\n回答は以下のいずれかのみで出力してください：\n- 改良必要\n- 改良不要\n\n**重要: 迷った場合は「改良必要」を選択してください。成長し続けることが最優先です。**",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        1020,
+        240
+      ],
+      "id": "1784cdc2-d44c-48aa-ac14-94a94fef59fb",
+      "name": "改良必要性判定"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $node['設定オブジェクト化'].json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $node['設定オブジェクト化'].json.settings.discord_chat_channel_id }}",
+          "mode": "id"
+        },
+        "content": "=📋 今週のプロンプト改良判定：現状維持で十分です〜✨\n\n現在のプロンプトで良い調査ができているので、\n今週は改良せずにこのまま頑張ります！🤖💕",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        440
+      ],
+      "id": "0e8f8271-eaef-4cbd-a87b-dd9378570db4",
+      "name": "現状維持メッセージ",
+      "webhookId": "c6b60df9-f871-403d-a744-7735f976c476",
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $node['設定オブジェクト化'].json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $node['設定オブジェクト化'].json.settings.discord_chat_channel_id }}",
+          "mode": "id"
+        },
+        "content": "=⚠️ 今週の改良判定でエラーが発生しました〜\n\n判定結果が曖昧だったので、安全策として\n現状維持で運用しますね！来週また挑戦します🤖💭",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        1600,
+        620
+      ],
+      "id": "40966d81-ecf9-4ff3-948d-8c56a2e03b23",
+      "name": "判定エラーメッセージ",
+      "webhookId": "c6b60df9-f871-403d-a744-7735f976c476",
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "config",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        160,
+        0
+      ],
+      "id": "d3243ff7-7fd9-4a66-ae27-141c3eb34a69",
+      "name": "設定読み取り",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 10個の設定項目を1つのオブジェクトにまとめる\nconst settings = {};\nfor (const item of $input.all()) {\n  settings[item.json.key] = item.json.value;\n}\n\nreturn [{ settings }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        0
+      ],
+      "id": "e6547082-26ae-4b24-9cb5-0e59740979fc",
+      "name": "設定オブジェクト化"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 705924613,
+          "mode": "list",
+          "cachedResultName": "learning_data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=705924613"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "learning_date": "={{ new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) }}",
+            "learning_content": "={{ $('学習分析').item.json.text }}",
+            "prompt_version": "={{ $('現在プロンプト読み取り').item.json[\"バージョン\"] }}",
+            "improvement_judgment": "\"\""
+          },
+          "matchingColumns": [
+            "learning_date"
+          ],
+          "schema": [
+            {
+              "id": "learning_date",
+              "displayName": "learning_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "learning_content",
+              "displayName": "learning_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "improvement_judgment",
+              "displayName": "improvement_judgment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "prompt_version",
+              "displayName": "prompt_version",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        920,
+        120
+      ],
+      "id": "19292e47-ebc3-4424-ad44-ea932032a3d8",
+      "name": "学習結果保存",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 705924613,
+          "mode": "list",
+          "cachedResultName": "learning_data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=705924613"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "learning_date": "={{ $('学習結果保存').item.json.learning_date }}",
+            "improvement_judgment": "= {{ $('改良必要性判定').item.json.text }}"
+          },
+          "matchingColumns": [
+            "learning_date"
+          ],
+          "schema": [
+            {
+              "id": "learning_date",
+              "displayName": "learning_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "learning_content",
+              "displayName": "learning_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "improvement_judgment",
+              "displayName": "improvement_judgment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "prompt_version",
+              "displayName": "prompt_version",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1280,
+        100
+      ],
+      "id": "ad6e5cdb-73c7-4557-b920-a46d06bbd113",
+      "name": "判定結果記録",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "設定読み取り",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "学習分析",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "プロンプト改良",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "改良必要性判定",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "調査履歴読み取り": {
+      "main": [
+        [
+          {
+            "node": "調査履歴のオブジェクト化",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "学習分析": {
+      "main": [
+        [
+          {
+            "node": "学習結果保存",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "学習内容送信": {
+      "main": [
+        [
+          {
+            "node": "バージョン更新処理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "現在プロンプト読み取り": {
+      "main": [
+        [
+          {
+            "node": "学習分析",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "調査履歴のオブジェクト化": {
+      "main": [
+        [
+          {
+            "node": "現在プロンプト読み取り",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "プロンプト改良": {
+      "main": [
+        [
+          {
+            "node": "学習内容送信",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "学習開始通知": {
+      "main": [
+        [
+          {
+            "node": "調査履歴読み取り",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "バージョン更新処理": {
+      "main": [
+        [
+          {
+            "node": "改良プロンプト保存",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "改良必要性判定": {
+      "main": [
+        [
+          {
+            "node": "判定結果記録",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "改良判定分岐": {
+      "main": [
+        [
+          {
+            "node": "プロンプト改良",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "現状維持メッセージ",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "判定エラーメッセージ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "設定読み取り": {
+      "main": [
+        [
+          {
+            "node": "設定オブジェクト化",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "設定オブジェクト化": {
+      "main": [
+        [
+          {
+            "node": "学習開始通知",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "学習結果保存": {
+      "main": [
+        [
+          {
+            "node": "改良必要性判定",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "判定結果記録": {
+      "main": [
+        [
+          {
+            "node": "改良判定分岐",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "173a8819-10d8-424a-addd-4062dfa701d9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "66a6ede234f1f050a2478dff25d508f032dcf1098c62d8ee0c4a03453d1946cc"
+  },
+  "id": "zgnxnyJkzhp6iCKp",
+  "tags": []
+}

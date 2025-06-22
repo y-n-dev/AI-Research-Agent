@@ -1,0 +1,1230 @@
+{
+  "name": "reserch_workflow_en",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1140,
+        -20
+      ],
+      "id": "da06bf9e-05ac-4320-986c-4a685af9c148",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "claude-sonnet-4-20250514",
+          "cachedResultName": "Claude 4 Sonnet"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        620,
+        180
+      ],
+      "id": "81753e78-7fce-4205-8512-2c57036929ea",
+      "name": "Anthropic Chat Model",
+      "credentials": {
+        "anthropicApi": {
+          "id": "ThLg5qkcjtu1d3nA",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "getAll",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $json.settings.discord_research_channel_id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        -600,
+        -20
+      ],
+      "id": "e432e4a6-dc6f-4f22-97a1-8bdc20653a75",
+      "name": "Message Monitor",
+      "webhookId": "66ed886c-92ee-4067-91e3-0d57e4122dae",
+      "retryOnFail": true,
+      "executeOnce": false,
+      "alwaysOutputData": false,
+      "notesInFlow": false,
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "075317e9-ea2c-41e5-aed2-bdffa3420cb8",
+              "leftValue": "={{ $('Message Monitor').all().some(msg => \n   !$('Processed Sheet Reading').all().find(row => row.json.message_id === msg.json.id) && \n   !msg.json.author.bot \n) }}",
+              "rightValue": "=",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -220,
+        -20
+      ],
+      "id": "cdd67006-1157-4161-8f17-793224682af5",
+      "name": "New Message Detection"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $('Config Object Creation').item.json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Config Object Creation').item.json.settings.discord_result_channel_id }}",
+          "mode": "id"
+        },
+        "content": "=📝 Starting research on '{{ $('Research Target Selection').item.json.content }}'!\n\n👤 user: {{ $('Research Target Selection').item.json.author.global_name }}({{ $('Research Target Selection').item.json.author.username }})\n🔗 message: https://discord.com/channels/{{ $('Config Object Creation').item.json.settings.discord_server_id }}/{{ $('Config Object Creation').item.json.settings.discord_research_channel_id }}/{{ $('Research Target Selection').item.json.id }}\n\nPlease wait while research begins ✨",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        160,
+        -40
+      ],
+      "id": "ed984fb9-9a9f-47f5-9611-4471828e2442",
+      "name": "Research Start Notification",
+      "webhookId": "69af0fc6-0c1e-466f-8d46-b1a69724ab49",
+      "executeOnce": true,
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/customsearch/v1",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "={{ $('Config Object Creation').item.json.settings.google_search_api_key }}"
+            },
+            {
+              "name": "cx",
+              "value": "={{ $('Config Object Creation').item.json.settings.google_search_engine_id }}"
+            },
+            {
+              "name": "q",
+              "value": "={{ $('Research Target Selection').item.json.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        320,
+        -40
+      ],
+      "id": "2fa33443-9f0d-466f-9685-827f5c9d1a06",
+      "name": "Web Search Execution"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Prompt Reading').item.json['current_prompt_text'] }}\n\nUser requested research on '{{ $('Research Target Selection').item.json.content }}'. \n\n🔍 **Web Search Results**\nHere are the latest web search results:\n{{ JSON.stringify($('Web Search Execution').item.json.items, null, 2) }}\n\n## 📋 Output Limitations\n※Please summarize the research report within {{ $json['character_limit'] }} characters.\n※Focus on key points and include only the most important information.\n※Make it readable and practical.",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        620,
+        -40
+      ],
+      "id": "7a980e2d-005e-415e-b1d6-3269fadaa40c",
+      "name": "Prompt Generation & Execution"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "={{ $('Config Object Creation').item.json.settings.notion_database_id }}",
+          "mode": "id"
+        },
+        "title": "={{ $('Research Target Selection').item.json.content }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "調査日時|rich_text",
+              "textContent": "={{ new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) }}"
+            },
+            {
+              "key": "ステータス|select",
+              "selectValue": "完了"
+            }
+          ]
+        },
+        "blockUi": {
+          "blockValues": [
+            {
+              "textContent": "={{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        920,
+        -40
+      ],
+      "id": "14011360-8e57-4286-b6bb-9ce8472c412b",
+      "name": "Research Report Creation",
+      "credentials": {
+        "notionApi": {
+          "id": "986XXgY0M092gLHH",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "config",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "key": "boredom_level",
+            "value": "0"
+          },
+          "matchingColumns": [
+            "key"
+          ],
+          "schema": [
+            {
+              "id": "key",
+              "displayName": "key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "value",
+              "displayName": "value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        480,
+        360
+      ],
+      "id": "2c19ddad-5906-4591-a504-7165d7e43ad5",
+      "name": "Boredom Level Reset",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "config",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "key",
+              "lookupValue": "boredom_level"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -920,
+        240
+      ],
+      "id": "1185d613-bae6-42b4-b22d-8c7995f41896",
+      "name": "Boredom Level Retrieval",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "config",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "value": "={{ $('Boredom Level Retrieval').item.json['値'] + 1 }}",
+            "key": "boredom_level"
+          },
+          "matchingColumns": [
+            "key"
+          ],
+          "schema": [
+            {
+              "id": "key",
+              "displayName": "key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "value",
+              "displayName": "value",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -700,
+        240
+      ],
+      "id": "d5c12125-2cf8-43ef-ac00-d1b89945f3f8",
+      "name": "Boredom Level Increase",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $('Config Object Creation').item.json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Config Object Creation').item.json.settings.discord_chat_channel_id }}",
+          "mode": "id"
+        },
+        "content": "💤 Good work today! No research requests yet ✨\nFeel free to ask if you have any research needs!",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        -340,
+        240
+      ],
+      "id": "09c15c6b-42b8-4dec-ac2e-647ae4d3f32d",
+      "name": "24h Boredom Message",
+      "webhookId": "7e3a27e5-6d37-49d4-be4b-4054271a4b2e",
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $('Config Object Creation').item.json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Config Object Creation').item.json.settings.discord_chat_channel_id }}",
+          "mode": "id"
+        },
+        "content": "🥺 Getting a bit bored... Any research requests?",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        -340,
+        400
+      ],
+      "id": "62e24388-9fed-4492-b68b-bc1c698dd82f",
+      "name": "72h Boredom Message",
+      "webhookId": "7e3a27e5-6d37-49d4-be4b-4054271a4b2e",
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $('Config Object Creation').item.json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Config Object Creation').item.json.settings.discord_chat_channel_id }}",
+          "mode": "id"
+        },
+        "content": "🤖💭 I'd like to learn about new topics!",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        -340,
+        580
+      ],
+      "id": "930d2aa8-2e48-48ca-b559-8f1c2a41c8f9",
+      "name": "1week Boredom Message",
+      "webhookId": "7e3a27e5-6d37-49d4-be4b-4054271a4b2e",
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1184196857,
+          "mode": "list",
+          "cachedResultName": "processed_messages",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=1184196857"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "message_id": "={{ $('Research Target Selection').item.json.id }}",
+            "content": "={{ $('Research Target Selection').item.json.content }}",
+            "processed_date": "={{ new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) }}",
+            "status": "完了"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "processed_date",
+              "displayName": "processed_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        680,
+        360
+      ],
+      "id": "160d84d2-ac86-44b0-a7f6-ea17c0b0e1ee",
+      "name": "Processed Message Registration",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 234951073,
+          "mode": "list",
+          "cachedResultName": "research_history",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=234951073"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "research_date": "={{ new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' }) }}",
+            "original_content": "={{ $('Research Target Selection').item.json.content }}",
+            "research_result": "={{ $('Prompt Generation & Execution').item.json.text }}",
+            "notion_page_url": "={{ $('Research Report Creation').item.json.url }}",
+            "status": "完了"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "research_date",
+              "displayName": "research_date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "original_content",
+              "displayName": "original_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "research_result",
+              "displayName": "research_result",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "notion_page_url",
+              "displayName": "notion_page_url",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        280,
+        360
+      ],
+      "id": "d1e6b452-78e4-490b-96e3-05dbd5007da1",
+      "name": "Research History Save",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 911248991,
+          "mode": "list",
+          "cachedResultName": "prompt_management",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=911248991"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "is_active",
+              "lookupValue": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        480,
+        -40
+      ],
+      "id": "970044cb-a91d-4c91-8103-0b201c19133e",
+      "name": "Prompt Reading",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Boredom Level Increase').item.json['値'] }}",
+                    "rightValue": "96",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a4478c5a-6196-4c23-ac28-4b8eeca0b827"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "42ab37a0-9b57-4259-a97a-2e3fd81d96f5",
+                    "leftValue": "={{ $('Boredom Level Increase').item.json['値'] }}",
+                    "rightValue": "288",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "78f8f219-a90f-4b1a-a71e-c9c87c91f0d4",
+                    "leftValue": "={{ $('Boredom Level Increase').item.json['値'] }}",
+                    "rightValue": "576",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -540,
+        240
+      ],
+      "id": "7e30962d-9d87-4255-b34c-e2fb6e9290f9",
+      "name": "Boredom Level Assessment"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 未処理メッセージを古い順に取得\nconst processedIds = $('Processed Sheet Reading').all().map(row => row.json.message_id);\n\nconst unprocessed = $('Message Monitor').all()\n  .filter(msg => !processedIds.includes(msg.json.id) && !msg.json.author.bot)\n  .sort((a, b) => new Date(a.json.timestamp) - new Date(b.json.timestamp));\n\n// 最も古い未処理メッセージを返す\nreturn unprocessed.length > 0 ? [unprocessed[0]] : [];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        -40
+      ],
+      "id": "b7eb629d-3165-461c-a17e-30e54fd4d7a8",
+      "name": "Research Target Selection"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 10個の設定項目を1つのオブジェクトにまとめる\nconst settings = {};\nfor (const item of $input.all()) {\n  settings[item.json.key] = item.json.value;\n}\n\nreturn [{ settings }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -800,
+        -20
+      ],
+      "id": "b48290cc-9df1-4636-8b9b-2b899f544c7f",
+      "name": "Config Object Creation"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1184196857,
+          "mode": "list",
+          "cachedResultName": "processed_messages",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=1184196857"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -420,
+        -20
+      ],
+      "id": "8f4c2679-3359-4a3e-8723-baf65a1a415b",
+      "name": "Processed Sheet Reading",
+      "executeOnce": true,
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Boredom Level Retrieval用の空データを作成\n// 前のノードのデータに関係なく、空のオブジェクトを返す\nreturn [{}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1100,
+        240
+      ],
+      "id": "7b67957d-adff-464c-9edb-871d56b1477f",
+      "name": "Boredom Data Reset"
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "documentId": {
+          "__rl": true,
+          "value": "1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os",
+          "mode": "list",
+          "cachedResultName": "AI Research Agent Configuration",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "config",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1tE6eK5zy48iBCCxu9bW0depV49eIuWu5-DLfHZsM2Os/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        -980,
+        -20
+      ],
+      "id": "284bde9c-ad3b-4557-b629-467c0f8735de",
+      "name": "Config Reading",
+      "credentials": {
+        "googleApi": {
+          "id": "G1ge67ubgI1HlT2P",
+          "name": "Google Service Account account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "guildId": {
+          "__rl": true,
+          "value": "={{ $('Config Object Creation').item.json.settings.discord_server_id }}",
+          "mode": "id"
+        },
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Config Object Creation').item.json.settings.discord_result_channel_id }}",
+          "mode": "id"
+        },
+        "content": "=✅  Research on '{{ $('Selected Research Target').item.json.content }}' completed!\n\n📋 Results saved to Notion\n🔗 調査レポート: {{ $('Research Report Creation').item.json.url }}\nGreat work! ✨",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        80,
+        360
+      ],
+      "id": "13be4be8-4931-442f-bc78-143b0dc6280c",
+      "name": "Research Completion Notification",
+      "webhookId": "368068bb-1ce8-4e34-859a-f3e301bdd487",
+      "credentials": {
+        "discordBotApi": {
+          "id": "imUQUuQnM7DwsNxZ",
+          "name": "Discord Bot account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Config Reading",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Prompt Generation & Execution",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message Monitor": {
+      "main": [
+        [
+          {
+            "node": "Processed Sheet Reading",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Message Detection": {
+      "main": [
+        [
+          {
+            "node": "Research Target Selection",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Boredom Data Reset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Start Notification": {
+      "main": [
+        [
+          {
+            "node": "Web Search Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Web Search Execution": {
+      "main": [
+        [
+          {
+            "node": "Prompt Reading",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompt Generation & Execution": {
+      "main": [
+        [
+          {
+            "node": "Research Report Creation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Report Creation": {
+      "main": [
+        [
+          {
+            "node": "Research Completion Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Boredom Level Retrieval": {
+      "main": [
+        [
+          {
+            "node": "Boredom Level Increase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Boredom Level Increase": {
+      "main": [
+        [
+          {
+            "node": "Boredom Level Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Boredom Level Reset": {
+      "main": [
+        [
+          {
+            "node": "Processed Message Registration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research History Save": {
+      "main": [
+        [
+          {
+            "node": "Boredom Level Reset",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prompt Reading": {
+      "main": [
+        [
+          {
+            "node": "Prompt Generation & Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Boredom Level Assessment": {
+      "main": [
+        [
+          {
+            "node": "24h Boredom Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "72h Boredom Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "1week Boredom Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Target Selection": {
+      "main": [
+        [
+          {
+            "node": "Research Start Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Object Creation": {
+      "main": [
+        [
+          {
+            "node": "Message Monitor",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processed Sheet Reading": {
+      "main": [
+        [
+          {
+            "node": "New Message Detection",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Boredom Data Reset": {
+      "main": [
+        [
+          {
+            "node": "Boredom Level Retrieval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config Reading": {
+      "main": [
+        [
+          {
+            "node": "Config Object Creation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Completion Notification": {
+      "main": [
+        [
+          {
+            "node": "Research History Save",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d5b84fe4-22fd-40ae-b2f2-934c9a619c76",
+  "meta": {
+    "instanceId": "66a6ede234f1f050a2478dff25d508f032dcf1098c62d8ee0c4a03453d1946cc"
+  },
+  "id": "X6CwKtPNbya8Cw1b",
+  "tags": []
+}
